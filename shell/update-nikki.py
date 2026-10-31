@@ -150,13 +150,14 @@ def update(selection):
         for _, filename in selected.values():
             shutil.copyfile(staged / filename, packages / filename)
             log("Prepared " + filename)
-        # APK supports exact version constraints. Opkg supports local IPK paths,
-        # which also ensure a newer feed version cannot replace the release set.
+        # Both package managers accept local archive paths. Avoid name=version:
+        # 25.12 ImageBuilder's FormatPackages leaks that version to later packages.
+        # Explicit files also prevent a feed version replacing this release set.
         resolved = [t for t in tokens if not related(t.split("=", 1)[0])]
         requested = {t.split("=", 1)[0] for t in tokens}
         for name, (version, filename) in sorted(selected.items()):
             if name in REQUIRED or name in requested:
-                resolved.append(f"{name}={version}" if fmt == "apk" else str((packages / filename).resolve()))
+                resolved.append(str((packages / filename).resolve()))
         Path(".nikki-packages").write_text(" ".join(resolved) + "\n")
         log(f"Prepared official {tag}; normal dependencies are resolved by ImageBuilder")
 
