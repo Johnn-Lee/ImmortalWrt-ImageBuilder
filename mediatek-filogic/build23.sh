@@ -21,7 +21,7 @@ if [ -n "$CUSTOM_PACKAGES" ]; then
     echo "✅ Run files copied to extra-packages:"
     ls -lh /home/build/immortalwrt/extra-packages/*.run
     # 解压并拷贝ipk到packages目录
-    sh shell/prepare-packages.sh
+    sh shell/prepare-packages.sh || exit 1
     ls -lah /home/build/immortalwrt/packages/
     # 添加架构优先级信息
     sed -i '1i\

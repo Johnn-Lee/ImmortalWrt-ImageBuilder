@@ -35,7 +35,7 @@ else
 
   echo "✅ Run files copied to extra-packages:"
   # 解压并拷贝apk到packages目录
-  sh shell/apk-prepare-packages.sh
+  sh shell/apk-prepare-packages.sh || exit 1
   ls -lah /home/build/immortalwrt/packages/
 fi
 
