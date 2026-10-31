@@ -45,7 +45,7 @@ cp -r /tmp/store-run-repo/run/arm64/* /home/build/immortalwrt/extra-packages/
 echo "✅ Run files copied to extra-packages:"
 ls -lh /home/build/immortalwrt/extra-packages/*.run
 # 解压并拷贝ipk到packages目录
-sh shell/prepare-packages.sh || exit 1
+CUSTOM_PACKAGES="$CUSTOM_PACKAGES" sh shell/prepare-packages.sh || exit 1
 [ ! -f .nikki-packages ] || CUSTOM_PACKAGES=$(cat .nikki-packages)
 ls -lah /home/build/immortalwrt/packages/
 # 添加架构优先级信息

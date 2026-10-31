@@ -3,6 +3,8 @@ import importlib.util
 import io
 import json
 import os
+import shutil
+import subprocess
 import tarfile
 import tempfile
 import unittest
@@ -113,6 +115,28 @@ class NikkiTests(unittest.TestCase):
             nikki.update('nikki')
             fetch.assert_not_called()
         self.assertFalse(Path('.nikki-packages').exists())
+
+    @unittest.skipUnless(Path('/bin/sh').exists(), 'requires POSIX shell')
+    def test_shell_uses_actual_build_selection_and_clears_stale_state(self):
+        Path('shell').mkdir()
+        Path('shell/apk-custom-packages.sh').write_text('CUSTOM_PACKAGES="nikki"\n')
+        wrapper = Path(SPEC.origin).with_suffix('.sh')
+        shutil.copyfile(wrapper, 'shell/update-nikki.sh')
+        Path('bin').mkdir()
+        stub = Path('bin/python3')
+        stub.write_text('#!/bin/sh\nprintf "%s\\n" "$2" > .nikki-packages\n')
+        stub.chmod(0o755)
+        env = dict(os.environ, PATH=str(Path('bin').resolve()) + ':' + os.environ['PATH'])
+        env['CUSTOM_PACKAGES'] = 'luci-i18n-nikki-zh-cn luci-app-amlogic'
+        subprocess.run(['/bin/sh', 'shell/update-nikki.sh'], env=env, check=True)
+        self.assertEqual(Path('.nikki-packages').read_text().strip(), env['CUSTOM_PACKAGES'])
+        # An explicitly empty/disabled selection must not fall back to defaults.
+        env['CUSTOM_PACKAGES'] = '-nikki -luci-i18n-nikki-zh-cn unrelated'
+        subprocess.run(['/bin/sh', 'shell/update-nikki.sh'], env=env, check=True)
+        self.assertFalse(Path('.nikki-packages').exists())
+        env.pop('CUSTOM_PACKAGES')
+        subprocess.run(['/bin/sh', 'shell/update-nikki.sh'], env=env, check=True)
+        self.assertEqual(Path('.nikki-packages').read_text().strip(), 'nikki')
 
     def test_format_and_selection_conflicts(self):
         for selection in ('nikki mihomo-alpha', 'nikki -mihomo-meta', 'nikki -luci-app-nikki'):

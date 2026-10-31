@@ -10,8 +10,11 @@ else
     echo '[Nikki] ERROR: No ImageBuilder repository configuration' >&2
     exit 1
 fi
-CUSTOM_PACKAGES=
-. "./$selection_file"
+if [ "${CUSTOM_PACKAGES+x}" != x ]; then
+    CUSTOM_PACKAGES=
+    # Standalone use; build entrypoints pass their actual list in the environment.
+    . "./$selection_file"
+fi
 case " $CUSTOM_PACKAGES " in
     *' nikki '*|*' nikki='*|*' luci-app-nikki '*|*' luci-app-nikki='*|*' luci-i18n-nikki-'*) ;;
     *) echo '[Nikki] Not selected; no changes'; exit 0 ;;

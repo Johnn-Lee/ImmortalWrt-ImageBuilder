@@ -15,7 +15,7 @@ else
 
   echo "✅ Run files copied to extra-packages:"
   # 解压并拷贝apk到packages目录
-  sh shell/apk-prepare-packages.sh || exit 1
+  CUSTOM_PACKAGES="$CUSTOM_PACKAGES" sh shell/apk-prepare-packages.sh || exit 1
   [ ! -f .nikki-packages ] || CUSTOM_PACKAGES=$(cat .nikki-packages)
   ls -lah /home/build/immortalwrt/packages/
 fi
