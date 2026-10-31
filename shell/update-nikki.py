@@ -108,7 +108,10 @@ def sign_apks(work, staged):
     subprocess.run(["openssl", "ecparam", "-name", "prime256v1", "-genkey", "-noout", "-out", str(private)], check=True)
     subprocess.run(["openssl", "ec", "-in", str(private), "-pubout", "-out", str(public)], check=True)
     files = [str(p) for p in sorted(staged.glob("*.apk"))]
-    subprocess.run([str(apk), "adbsign", "--allow-untrusted", "--sign-key", str(private), *files], check=True)
+    # apk-tools versions used by ImageBuilder retain signing state between
+    # input files; sign each file in its own process, then verify the whole set.
+    for filename in files:
+        subprocess.run([str(apk), "adbsign", "--allow-untrusted", "--sign-key", str(private), filename], check=True)
     subprocess.run([str(apk), "--keys-dir", str(trust), "verify", *files], check=True)
     return public
 

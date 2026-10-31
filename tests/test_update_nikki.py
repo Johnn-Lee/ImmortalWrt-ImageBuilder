@@ -112,6 +112,20 @@ class NikkiTests(unittest.TestCase):
             self.run_update(release=release)
         self.assertFalse(Path('.nikki-packages').exists())
 
+    def test_each_apk_is_signed_separately_and_verified_strictly(self):
+        work = Path('signing').resolve(); work.mkdir()
+        staged = work / 'packages'; staged.mkdir()
+        for name in ('nikki-1.apk', 'luci-app-nikki-1.apk', 'mihomo-meta-1.apk'):
+            (staged / name).write_bytes(b'package')
+        with patch.object(nikki.subprocess, 'run') as run:
+            nikki.sign_apks(work, staged)
+        commands = [call.args[0] for call in run.call_args_list]
+        signing = [cmd for cmd in commands if 'adbsign' in cmd]
+        self.assertEqual(len(signing), 3)
+        self.assertEqual({cmd[-1] for cmd in signing}, {str(p) for p in staged.iterdir()})
+        self.assertIn('verify', commands[-1])
+        self.assertNotIn('--allow-untrusted', commands[-1])
+
     def test_unsupported_system_keeps_existing(self):
         self.configure('ipk', '23.05.6')
         with patch.object(nikki, 'fetch') as fetch:
