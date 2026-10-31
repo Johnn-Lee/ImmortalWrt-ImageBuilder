@@ -96,13 +96,21 @@ def old_package_name(filename):
     return ""
 
 
-def prepare_apk_key(work):
-    # Same key URL used by upstream feed.sh. Trust only Nikki's signing key;
-    # do not disable signature checks for any repository or package.
-    key = work / "nikki.pem"
-    fetch("https://nikkinikki.pages.dev/public-key.pem", key)
-    subprocess.run(["openssl", "pkey", "-pubin", "-in", str(key), "-noout"], check=True)
-    return key
+def sign_apks(work, staged):
+    # Upstream Release APKs have no signature blocks (only its feed index is
+    # signed). After verifying the Release SHA256, sign ONLY these staged APKs
+    # with an ephemeral build key. Keep signature checking enabled everywhere.
+    apk = Path("staging_dir/host/bin/apk").resolve()
+    private = work / "private.pem"
+    trust = work / "trust"
+    trust.mkdir()
+    public = trust / "nikki-build.pem"
+    subprocess.run(["openssl", "ecparam", "-name", "prime256v1", "-genkey", "-noout", "-out", str(private)], check=True)
+    subprocess.run(["openssl", "ec", "-in", str(private), "-pubout", "-out", str(public)], check=True)
+    files = [str(p) for p in sorted(staged.glob("*.apk"))]
+    subprocess.run([str(apk), "adbsign", "--allow-untrusted", "--sign-key", str(private), *files], check=True)
+    subprocess.run([str(apk), "--keys-dir", str(trust), "verify", *files], check=True)
+    return public
 
 
 def update(selection):
@@ -150,13 +158,13 @@ def update(selection):
             name = token.split("=", 1)[0]
             if related(name) and name not in selected and name != "mihomo":
                 raise ValueError(f"Selected package is absent from official release: {name}")
-        key = prepare_apk_key(work) if fmt == "apk" else None
+        key = sign_apks(work, staged) if fmt == "apk" else None
         packages = Path("packages")
         packages.mkdir(exist_ok=True)
         # All downloads/validation finish before any old package is touched.
         if key:
             Path("keys").mkdir(exist_ok=True)
-            shutil.copyfile(key, "keys/nikki.pem")
+            shutil.copyfile(key, "keys/nikki-build.pem")
         for file in packages.iterdir():
             if file.is_file() and related(old_package_name(file.name)):
                 file.unlink()

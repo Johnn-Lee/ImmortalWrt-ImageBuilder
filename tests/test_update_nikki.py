@@ -64,7 +64,7 @@ class NikkiTests(unittest.TestCase):
             target.write_bytes(json.dumps(release or self.release(), separators=(',', ':')).encode()
                                if url == nikki.API else (archive or self.archive(fmt)))
         key = Path('test-key.pem'); key.write_text('test public key')
-        with patch.object(nikki, 'fetch', side_effect=fetch), patch.object(nikki, 'prepare_apk_key', return_value=key):
+        with patch.object(nikki, 'fetch', side_effect=fetch), patch.object(nikki, 'sign_apks', return_value=key):
             nikki.update(selection)
 
     def test_compact_and_pretty_json(self):
@@ -84,7 +84,7 @@ class NikkiTests(unittest.TestCase):
         self.assertNotIn('luci-i18n-nikki-zh-cn', selected)
         self.assertEqual(Path('packages/nikki-helper-1.apk').read_bytes(), b'old')
         self.assertEqual(Path('packages/other-1.apk').read_bytes(), b'old')
-        self.assertEqual(Path('keys/nikki.pem').read_text(), 'test public key')
+        self.assertEqual(Path('keys/nikki-build.pem').read_text(), 'test public key')
         self.assertFalse(Path('packages/mihomo-alpha-2025.apk').exists())
         self.assertEqual(len(list(Path('packages').glob('nikki-[0-9]*.apk'))), 1)
 
