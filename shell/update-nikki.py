@@ -96,6 +96,15 @@ def old_package_name(filename):
     return ""
 
 
+def prepare_apk_key(work):
+    # Same key URL used by upstream feed.sh. Trust only Nikki's signing key;
+    # do not disable signature checks for any repository or package.
+    key = work / "nikki.pem"
+    fetch("https://nikkinikki.pages.dev/public-key.pem", key)
+    subprocess.run(["openssl", "pkey", "-pubin", "-in", str(key), "-noout"], check=True)
+    return key
+
+
 def update(selection):
     repo = Path("repositories") if Path("repositories").is_file() else Path("repositories.conf")
     fmt = "apk" if repo.name == "repositories" else "ipk"
@@ -141,9 +150,13 @@ def update(selection):
             name = token.split("=", 1)[0]
             if related(name) and name not in selected and name != "mihomo":
                 raise ValueError(f"Selected package is absent from official release: {name}")
+        key = prepare_apk_key(work) if fmt == "apk" else None
         packages = Path("packages")
         packages.mkdir(exist_ok=True)
         # All downloads/validation finish before any old package is touched.
+        if key:
+            Path("keys").mkdir(exist_ok=True)
+            shutil.copyfile(key, "keys/nikki.pem")
         for file in packages.iterdir():
             if file.is_file() and related(old_package_name(file.name)):
                 file.unlink()
