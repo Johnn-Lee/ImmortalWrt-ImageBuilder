@@ -27,3 +27,4 @@ find "$BASE_DIR" -mindepth 2 -maxdepth 2 -type f -name "*.apk" ! -path "$TEMP_DI
 echo "✅ 所有 .apk 文件已整理至 $TARGET_DIR/"
 
 sh shell/update-nikki.sh || exit 1
+sh shell/update-auth-thu.sh || exit 1

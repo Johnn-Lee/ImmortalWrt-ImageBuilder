@@ -27,6 +27,12 @@
 > 7、对于[插件追新的用户 建议前往run项目 下载run后 ](https://github.com/wukongdaily/RunFilesBuilder/discussions/41)用命令sh xx.run 覆盖安装 <br>
 > 8、支持24.10.x 、25.12.x 等版本 （包括x86-64-ISO、x86-64、rockchip、全志sunxi、无线路由器）
 
+## 清华校园网认证（Auth THU）
+
+默认在支持的机型上集成 [luci-app-auth-thu](https://github.com/stevenjoezhang/luci-app-auth-thu) 和 [GoAuthing](https://github.com/z4yx/GoAuthing) 核心。每次构建从两个项目的 GitHub 最新稳定版 Release 下载，校验官方 SHA-256 和核心 ELF 架构；24.10/旧版使用 IPK，25.12 使用 APK 并由 ImageBuilder 本地签名。适用于 aarch64、x86_64、ARM32、MIPS32、RISC-V64 等有官方核心的架构；没有官方核心的架构会跳过整套插件，以避免构建出不可用的界面。
+
+构建完成后在 LuCI「服务 / Auth THU」中填写账号密码并启用；默认不开启认证，也不在固件中预置凭据。如不需要，将 `shell/custom-packages.sh` 和 `shell/apk-custom-packages.sh` 中的 `luci-app-auth-thu` 行注释即可。GoAuthing 核心额外占用约 8 MB，闪存较小的设备请注意容量。此功能不会在路由器运行时自动更新；更新发生在重新构建固件时。
+
 ## [基本用法步骤](https://github.com/wukongdaily/AutoBuildImmortalWrt/wiki) 👈🏻
 1、fork本项目<br>
 2、在fork后的项目中 点击【action】 找到需要的工作流后 run-workflow<br>
